@@ -1,7 +1,5 @@
 (require 'alexandria)
-(require 'utils/misc)
-
-(import 'alexandria:if-let)
+(use-package :alexandria)
 
 (defparameter *small-primes*
   '(2 3 5 7 11 13 17 19 23 29 31 37 41 43 47 53 59 61 67 71 73 79 83 89 97 101 103 107 109 113 
@@ -17,7 +15,8 @@
         acc)))
 
 (defun small-factorise (n &optional (small-primes *small-primes*) acc)
-  "Find prime factors of n by searching a list."
+  "Find prime factors of n by searching a list.
+   Return a list of prime factors and either a composite, n, or nil"
   (if-let (small-primes (rest-if (lambda (p) (zerop (mod n p))) small-primes))
     (let* ((p (car small-primes))
            (acc (cons p acc)))
@@ -28,7 +27,7 @@
 
 (defun rest-if (predicate seq)
   "Return the subseq from the first element in seq which satisfies predicate to the end.
-   (from my utils package)"
+   (Copied from my utils package)"
   (when-let ((i (position-if predicate seq)))
     (subseq seq i)))
 
@@ -36,13 +35,17 @@
   "Find prime factors of n using Pollard's Rho algorithm."
   (if (primep n)
       (cons n acc)
-      (let ((d (rho-factor n)))
+      (let ((d (rho-factor n 2)))
         (rho-factorise (floor n d) (cons d acc)))))
 
-(defun rho-factor (n &optional (x (random n)) (y (random n)))
-  "Find a single prime factor."
+(defun rho-factor (n &optional (x (random n)) (y x))
+  "Find a single prime factor of n."
+  (format t "Factorising n = ~d:~%" n)
   (flet ((next (x) (mod (1+ (expt x 2)) n)))
-    (let ((d (gcd (- y x) n)))
+    (let* ((x (next x))
+           (y (next (next y)))
+           (d (gcd (- y x) n)))
+      (format t "  x = ~d, y = ~d, gcd(y-x, n) = ~d~%"  x y d)
       (if (= d 1)
         (rho-factor n (next x) (next (next y)))
         (if (= d n)
